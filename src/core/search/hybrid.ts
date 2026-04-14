@@ -12,7 +12,7 @@
 import type { BrainEngine } from '../engine.ts';
 import { MAX_SEARCH_LIMIT, clampSearchLimit } from '../engine.ts';
 import type { SearchResult, SearchOpts } from '../types.ts';
-import { embed } from '../embedding.ts';
+import { embed, hasEmbeddingCredentials, getEmbeddingProvider } from '../embedding.ts';
 import { dedupResults } from './dedup.ts';
 import { autoDetectDetail } from './intent.ts';
 import { getExpansionProvider } from './expansion.ts';
@@ -72,11 +72,11 @@ export async function hybridSearch(
     ? keywordLists[0]
     : rrfFusion(keywordLists, opts?.rrfK ?? RRF_K, detail !== 'high');
 
-  // Vector search currently needs OpenAI embedding credentials.
+  // Vector search needs embedding provider credentials.
   // If not configured, return expanded keyword-only results.
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasEmbeddingCredentials()) {
     if (DEBUG && opts?.expansion) {
-      console.error(`[search-debug] vector search skipped (no OPENAI_API_KEY), expansion_provider=${getExpansionProvider()}`);
+      console.error(`[search-debug] vector search skipped (missing embedding credentials), embedding_provider=${getEmbeddingProvider()}, expansion_provider=${getExpansionProvider()}`);
     }
     return dedupResults(keywordResults, opts?.dedupOpts).slice(offset, offset + limit);
   }

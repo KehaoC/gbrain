@@ -234,6 +234,7 @@ You take a meeting with someone. The agent writes a brain page for them, links i
 | **OpenAI API key** | Embeddings (text-embedding-3-large) | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 | **Anthropic API key** | Multi-query expansion + LLM chunking (Haiku) | [console.anthropic.com](https://console.anthropic.com) |
 | **MiniMax API key** | Optional multi-query expansion provider (Anthropic-compatible endpoint) | [platform.minimaxi.com](https://platform.minimaxi.com) |
+| **SiliconFlow API key** | Optional embeddings provider (OpenAI-compatible /v1/embeddings) | [siliconflow.cn](https://www.siliconflow.cn/) |
 
 Set the API keys as environment variables:
 
@@ -247,6 +248,14 @@ export MINIMAX_API_KEY=...
 # Optional overrides:
 # export MINIMAX_MODEL=MiniMax-M2.5-highspeed
 # export MINIMAX_ANTHROPIC_BASE_URL=https://api.minimaxi.com/anthropic
+
+# Optional: use SiliconFlow for embeddings instead of OpenAI
+export GBRAIN_EMBEDDING_PROVIDER=siliconflow
+export SILICONFLOW_API_KEY=...
+# Optional overrides:
+# export SILICONFLOW_EMBEDDING_MODEL=Qwen/Qwen3-Embedding-4B
+# export GBRAIN_EMBEDDING_DIMENSIONS=1536
+# export SILICONFLOW_BASE_URL=https://api.siliconflow.cn/v1
 ```
 
 The Supabase connection URL is configured during `gbrain init --supabase`. The OpenAI and Anthropic SDKs read their keys from the environment automatically.
