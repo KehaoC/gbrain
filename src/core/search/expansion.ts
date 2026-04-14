@@ -11,14 +11,49 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const MAX_QUERIES = 3;
 const MIN_WORDS = 3;
+const MINIMAX_ANTHROPIC_BASE_URL = 'https://api.minimaxi.com/anthropic';
+const DEFAULT_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
+const DEFAULT_MINIMAX_MODEL = 'MiniMax-M2.5-highspeed';
 
 let anthropicClient: Anthropic | null = null;
 
 function getClient(): Anthropic {
   if (!anthropicClient) {
-    anthropicClient = new Anthropic();
+    const provider = getExpansionProvider();
+    if (provider === 'minimax') {
+      anthropicClient = new Anthropic({
+        apiKey: getMinimaxApiKey(),
+        baseURL: process.env.MINIMAX_ANTHROPIC_BASE_URL || MINIMAX_ANTHROPIC_BASE_URL,
+      });
+    } else {
+      anthropicClient = new Anthropic();
+    }
   }
   return anthropicClient;
+}
+
+type ExpansionProvider = 'anthropic' | 'minimax';
+
+export function getExpansionProvider(): ExpansionProvider {
+  const raw = (process.env.GBRAIN_EXPANSION_PROVIDER || '').toLowerCase().trim();
+  if (raw === 'minimax') return 'minimax';
+  return 'anthropic';
+}
+
+function getExpansionModel(): string {
+  const provider = getExpansionProvider();
+  if (provider === 'minimax') {
+    return process.env.MINIMAX_MODEL || DEFAULT_MINIMAX_MODEL;
+  }
+  return process.env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL;
+}
+
+function getMinimaxApiKey(): string {
+  const key = process.env.MINIMAX_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    throw new Error('MINIMAX_API_KEY is required when GBRAIN_EXPANSION_PROVIDER=minimax');
+  }
+  return key;
 }
 
 export async function expandQuery(query: string): Promise<string[]> {
@@ -42,7 +77,7 @@ export async function expandQuery(query: string): Promise<string[]> {
 
 async function callHaikuForExpansion(query: string): Promise<string[]> {
   const response = await getClient().messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: getExpansionModel(),
     max_tokens: 300,
     tools: [
       {

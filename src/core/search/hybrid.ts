@@ -15,6 +15,7 @@ import type { SearchResult, SearchOpts } from '../types.ts';
 import { embed } from '../embedding.ts';
 import { dedupResults } from './dedup.ts';
 import { autoDetectDetail } from './intent.ts';
+import { getExpansionProvider } from './expansion.ts';
 
 const RRF_K = 60;
 const COMPILED_TRUTH_BOOST = 2.0;
@@ -50,14 +51,6 @@ export async function hybridSearch(
     console.error(`[search-debug] auto-detail=${detail} for query="${query}"`);
   }
 
-  // Run keyword search (always available, no API key needed)
-  const keywordResults = await engine.searchKeyword(query, searchOpts);
-
-  // Skip vector search entirely if no OpenAI key is configured
-  if (!process.env.OPENAI_API_KEY) {
-    return dedupResults(keywordResults).slice(offset, offset + limit);
-  }
-
   // Determine query variants (optionally with expansion)
   // expandQuery already includes the original query in its return value,
   // so we use it directly instead of prepending query again
@@ -69,6 +62,23 @@ export async function hybridSearch(
     } catch {
       // Expansion failure is non-fatal
     }
+  }
+
+  // Run keyword search for all query variants (supports expansion even without vectors)
+  const keywordLists = await Promise.all(
+    queries.map(q => engine.searchKeyword(q, searchOpts)),
+  );
+  const keywordResults = keywordLists.length === 1
+    ? keywordLists[0]
+    : rrfFusion(keywordLists, opts?.rrfK ?? RRF_K, detail !== 'high');
+
+  // Vector search currently needs OpenAI embedding credentials.
+  // If not configured, return expanded keyword-only results.
+  if (!process.env.OPENAI_API_KEY) {
+    if (DEBUG && opts?.expansion) {
+      console.error(`[search-debug] vector search skipped (no OPENAI_API_KEY), expansion_provider=${getExpansionProvider()}`);
+    }
+    return dedupResults(keywordResults, opts?.dedupOpts).slice(offset, offset + limit);
   }
 
   // Embed all query variants and run vector search

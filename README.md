@@ -233,12 +233,20 @@ You take a meeting with someone. The agent writes a brain page for them, links i
 | **Supabase account** | Postgres + pgvector database | [supabase.com](https://supabase.com) (Pro tier, $25/mo for 8GB) |
 | **OpenAI API key** | Embeddings (text-embedding-3-large) | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 | **Anthropic API key** | Multi-query expansion + LLM chunking (Haiku) | [console.anthropic.com](https://console.anthropic.com) |
+| **MiniMax API key** | Optional multi-query expansion provider (Anthropic-compatible endpoint) | [platform.minimaxi.com](https://platform.minimaxi.com) |
 
 Set the API keys as environment variables:
 
 ```bash
 export OPENAI_API_KEY=sk-...
 export ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional: use MiniMax for query expansion instead of Anthropic
+export GBRAIN_EXPANSION_PROVIDER=minimax
+export MINIMAX_API_KEY=...
+# Optional overrides:
+# export MINIMAX_MODEL=MiniMax-M2.5-highspeed
+# export MINIMAX_ANTHROPIC_BASE_URL=https://api.minimaxi.com/anthropic
 ```
 
 The Supabase connection URL is configured during `gbrain init --supabase`. The OpenAI and Anthropic SDKs read their keys from the environment automatically.
